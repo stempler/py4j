@@ -29,6 +29,14 @@ if (JavaVersion.current().isJava8Compatible()) {
 if (JavaVersion.current().isJava7Compatible()) {
     apply plugin: 'findbugs'
     apply plugin: 'org.standardout.bnd-platform'
+    tasks.bundles.dependsOn('assemble')
+}
+
+// configuration for workaround 1 - include project dependencies
+configurations {
+    platform {
+        extendsFrom compile
+    }
 }
 
 platform {
@@ -42,19 +50,37 @@ platform {
     categoryId = 'py4j'
     categoryName = 'Py4J'
 
-    bundle project
-    bnd(project) {
-        symbolicName = 'py4j-java'
-        bundleName = 'py4j-java'
-        version = bundleVersion
-        instruction 'Eclipse-BuddyPolicy', 'global'
-        instruction 'Import-Package', '!javax.net'
-        instruction 'Export-Package', 'py4j,py4j.commands,py4j.model,py4j.reflection'
-        instruction 'Bundle-RequiredExecutionEnvironment', 'JavaSE-1.6'
-        instruction 'Bundle-Description', 'Bridge between Python and Java'
-        instruction 'Bundle-DocURL', 'http://www.py4j.org'
-        addQualifier = true
+    //XXX original attempt
+    // bundle project
+    // bnd(project) {
+    //     symbolicName = 'py4j-java'
+    //     bundleName = 'py4j-java'
+    //     version = bundleVersion
+    //     instruction 'Eclipse-BuddyPolicy', 'global'
+    //     instruction 'Import-Package', '!javax.net'
+    //     instruction 'Export-Package', 'py4j,py4j.commands,py4j.model,py4j.reflection'
+    //     instruction 'Bundle-RequiredExecutionEnvironment', 'JavaSE-1.6'
+    //     instruction 'Bundle-Description', 'Bridge between Python and Java'
+    //     instruction 'Bundle-DocURL', 'http://www.py4j.org'
+    //     addQualifier = true
+    // }
+
+    // workaround 1 - use produced jar file as dependency
+    bundle tasks.jar.outputs.files, {
+        bnd {
+            symbolicName = 'py4j-java'
+            bundleName = 'py4j-java'
+            version = bundleVersion
+            instruction 'Eclipse-BuddyPolicy', 'global'
+            instruction 'Import-Package', '!javax.net'
+            instruction 'Export-Package', 'py4j,py4j.commands,py4j.model,py4j.reflection'
+            instruction 'Bundle-RequiredExecutionEnvironment', 'JavaSE-1.6'
+            instruction 'Bundle-Description', 'Bridge between Python and Java'
+            instruction 'Bundle-DocURL', 'http://www.py4j.org'
+            addQualifier = true
+        }
     }
+
 }
 
 buildscript {
@@ -77,6 +103,9 @@ repositories {
 }
 
 dependencies {
+    // dummy dependency for testing
+    // compile 'org.slf4j:slf4j-api:1.7.21'
+
     testCompile group: 'junit', name: 'junit', version: '4.12'
     // For Java 8 Support
     if (JavaVersion.current().isJava7Compatible()) {
